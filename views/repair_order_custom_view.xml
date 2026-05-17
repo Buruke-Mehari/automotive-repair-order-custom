@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_repair_order_tree" model="ir.ui.view">
+        <field name="name">automotive.order.tree</field>
+        <field name="model">automotive.order</field>
+        <field name="arch" type="xml">
+            <tree string="Repair Orders">
+                <field name="name"/>
+                <field name="partner_id"/>
+                <field name="vehicle_license_plate"/>
+                <field name="date_in"/>
+                <field name="user_id" widget="many2one_avatar_user"/>
+                <field name="state" widget="badge" decoration-info="state == 'received'" decoration-warning="state == 'progress'" decoration-success="state in ('ready', 'delivered')"/>
+            </tree>
+        </field>
+    </record>
+    <record id="view_repair_order_form" model="ir.ui.view">
+        <field name="name">automotive.order.form</field>
+        <field name="model">automotive.order</field>
+        <field name="arch" type="xml">
+            <form string="Automotive Repair Order">
+                <header>
+                    <button name="action_receive_vehicle" type="object" string="Receive Vehicle" class="oe_highlight" invisible="state != 'draft'"/>
+                    <button name="action_start_repair" type="object" string="Start Repair" class="oe_highlight" invisible="state != 'received'"/>
+                    <button name="action_set_ready" type="object" string="Mark Ready" class="oe_highlight" invisible="state != 'progress'"/>
+                    <button name="action_deliver" type="object" string="Deliver" class="oe_highlight" invisible="state != 'ready'"/>
+                    <button name="action_cancel" type="object" string="Cancel" invisible="state in ('delivered', 'cancelled')"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,received,progress,ready,delivered"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group string="Customer &amp; Vehicle">
+                            <field name="partner_id"/>
+                            <field name="vehicle_license_plate"/>
+                            <field name="vehicle_mileage"/>
+                        </group>
+                        <group string="Execution Details">
+                            <field name="date_in"/>
+                            <field name="user_id" widget="many2one_avatar_user"/>
+                            <field name="sale_order_id"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Work Specifications" name="work_specifications">
+                            <group>
+                                <field name="requested_work" placeholder="Describe the issues reported by the customer..."/>
+                            </group>
+                        </page>
+                        <page string="Signatures" name="signatures">
+                            <group>
+                                <group string="Drop-off Authorization">
+                                    <field name="customer_signature" widget="signature"/>
+                                    <field name="customer_signed_by" invisible="not customer_signature"/>
+                                    <field name="customer_signed_on" invisible="not customer_signature"/>
+                                </group>
+                                <group string="Technician Sign-off">
+                                    <field name="tech_signature" widget="signature"/>
+                                    <field name="tech_signed_on" invisible="not tech_signature"/>
+                                </group>
+                            </group>
+                        </page>
+                        <page string="Internal Notes" name="internal_notes">
+                            <field name="internal_notes" placeholder="Internal technical notes..."/>
+                        </page>
+                    </notebook>
+                </sheet>
+              <!--  <div class="oe_chatter">
+                    <field name="message_follower_ids"/>
+                    <field name="activity_ids"/>
+                    <field name="message_ids"/>
+                </div> -->
+            </form>
+        </field>
+    </record>
+    <!-- 3. ACTION DEFINITION -->
+   <record id="action_automotive_repair_order" model="ir.actions.act_window">
+    <field name="name">Automotive Repair Orders</field>
+    <field name="res_model">automotive.order</field>
+    <field name="view_mode">tree,form</field>
+    <field name="help" type="html">
+        <p class="o_view_nocontent_smiling_face">
+            Create your first automotive repair order!
+        </p>
+    </field>
+</record>
+
+<menuitem id="menu_automotive_repair_root" 
+          name="Automotive Repair" 
+          web_icon="base,static/description/icon.png"
+          groups="repair_order_custom.group_automotive_manager"
+          sequence="10"/>
+
+<menuitem id="menu_automotive_repair_orders" 
+          name="Repair Orders" 
+          parent="menu_automotive_repair_root" 
+          action="action_automotive_repair_order"
+          groups="repair_order_custom.group_automotive_manager"
+          sequence="10"/>
+</odoo>

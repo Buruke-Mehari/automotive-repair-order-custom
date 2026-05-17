@@ -1,0 +1,3 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_automotive_order_user,automotive.order.user,model_automotive_order,group_automotive_user,1,1,1,0
+access_automotive_order_manager,automotive.order.manager,model_automotive_order,group_automotive_manager,1,1,1,1
