@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <record id="email_template_automotive_order" model="mail.template">
+            <field name="name">Automotive Repair: Send Order</field>
+            <field name="model_id" ref="base.model_automotive_order"/>
+            <field name="subject">{{ object.name }} - Repair Order Confirmation</field>
+            <field name="email_from">{{ object.company_id.email_formatted or object.user_id.email_formatted }}</field>
+            <field name="email_to">{{ object.partner_id.email_formatted }}</field>
+            <field name="description">Sent to customers when reviewing their automotive repair order details</field>
+            <field name="body_html" type="html">
+                <div style="margin: 0px; padding: 0px; font-family: 'Lucida Grande', Helvetica, Arial, Verdana, sans-serif; font-size: 13px;">
+                    <p style="margin: 0px; padding: 0px;">
+                        Dear <strong t-out="object.partner_id.name"/>,<br/><br/>
+                        Thank you for trusting us with your vehicle. Your repair order 
+                        <strong t-out="object.name"/> has been successfully registered.
+                        <br/><br/>
+                    </p>
+                    
+                    <table style="width: 100%; max-width: 500px; margin: 20px 0; border-collapse: collapse;">
+                        <tr style="background-color: #f8f9fa; border-bottom: 1px solid #dee2e6;">
+                            <td style="padding: 8px; font-weight: bold;">License Plate:</td>
+                            <td style="padding: 8px;" t-out="object.vehicle_license_plate"/>
+                        </tr>
+                        <tr style="border-bottom: 1px solid #dee2e6;">
+                            <td style="padding: 8px; font-weight: bold;">Mileage In:</td>
+                            <td style="padding: 8px;"><t t-out="object.vehicle_mileage"/> km</td>
+                        </tr>
+                        <tr style="background-color: #f8f9fa; border-bottom: 1px solid #dee2e6;">
+                            <td style="padding: 8px; font-weight: bold;">Status:</td>
+                            <td style="padding: 8px;"><t t-out="object.state"/></td>
+                        </tr>
+                    </table>
+
+                    <p style="margin: 0px; padding: 0px;">
+                        The requested summary of work is listed below:<br/>
+                        <i t-out="object.requested_work"/>
+                    </p>
+
+                    <p style="margin-top: 24px; min-height: 30px;">
+                        If you have any questions, feel free to reply directly to this email.
+                        <br/><br/>
+                        Best regards,<br/>
+                        <span t-out="object.company_id.name"/>
+                    </p>
+                </div>
+            </field>
+        </record>
+    </data>
+</odoo>

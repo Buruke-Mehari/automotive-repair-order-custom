@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
+    <!-- 1. TREE (LIST) VIEW -->
     <record id="view_repair_order_tree" model="ir.ui.view">
         <field name="name">automotive.order.tree</field>
         <field name="model">automotive.order</field>
@@ -11,9 +12,14 @@
                 <field name="date_in"/>
                 <field name="user_id" widget="many2one_avatar_user"/>
                 <field name="state" widget="badge" decoration-info="state == 'received'" decoration-warning="state == 'progress'" decoration-success="state in ('ready', 'delivered')"/>
+           
+                <field name="create_uid" widget="many2one_avatar_user" optional="show"/>
+                <field name="create_date" optional="hide"/> <field name="state" widget="badge" decoration-info="state == 'received'" decoration-warning="state == 'progress'" decoration-success="state in ('ready', 'delivered')"/>
             </tree>
         </field>
     </record>
+
+    <!-- 2. FORM VIEW -->
     <record id="view_repair_order_form" model="ir.ui.view">
         <field name="name">automotive.order.form</field>
         <field name="model">automotive.order</field>
@@ -24,6 +30,10 @@
                     <button name="action_start_repair" type="object" string="Start Repair" class="oe_highlight" invisible="state != 'received'"/>
                     <button name="action_set_ready" type="object" string="Mark Ready" class="oe_highlight" invisible="state != 'progress'"/>
                     <button name="action_deliver" type="object" string="Deliver" class="oe_highlight" invisible="state != 'ready'"/>
+                    
+                    <!-- NEW EMAIL BUTTON: Triggers the python composer method -->
+                    <button name="action_send_repair_order_email" type="object" string="Send Repair Order" class="oe_highlight" icon="fa-envelope" invisible="state == 'cancelled'"/>
+                    
                     <button name="action_cancel" type="object" string="Cancel" invisible="state in ('delivered', 'cancelled')"/>
                     <field name="state" widget="statusbar" statusbar_visible="draft,received,progress,ready,delivered"/>
                 </header>
@@ -69,36 +79,72 @@
                         </page>
                     </notebook>
                 </sheet>
-              <!--  <div class="oe_chatter">
+                
+                <!-- CHATTER SYSTEM: Required for mail.compose.message wizard tracking -->
+                <div class="oe_chatter">
                     <field name="message_follower_ids"/>
                     <field name="activity_ids"/>
                     <field name="message_ids"/>
-                </div> -->
+                </div>
             </form>
         </field>
     </record>
-    <!-- 3. ACTION DEFINITION -->
-   <record id="action_automotive_repair_order" model="ir.actions.act_window">
-    <field name="name">Automotive Repair Orders</field>
-    <field name="res_model">automotive.order</field>
-    <field name="view_mode">tree,form</field>
-    <field name="help" type="html">
-        <p class="o_view_nocontent_smiling_face">
-            Create your first automotive repair order!
-        </p>
+
+    <record id="view_partner_form_inherit_repair" model="ir.ui.view">
+    <field name ='name'>res.partner.form.inherit.repair</field>
+    <field name ='model'>res.partner</field>
+    <field name="inherit_id" ref="base.view_partner_form"/>
+    <field name="arch" type="xml">
+        <div name="button_box" position="inside">
+            <button name="action_view_repair_orders"
+                    type="object"
+                    class="oe_stat_button"
+                    icon="fa-wrench">
+                <field name="repair_order_count" widget="statinfo" string="Repair Orders"/>
+            </button>
+        </div>
     </field>
 </record>
 
-<menuitem id="menu_automotive_repair_root" 
-          name="Automotive Repair" 
-          web_icon="base,static/description/icon.png"
-          groups="repair_order_custom.group_automotive_manager"
-          sequence="10"/>
+<record id="fleet_vehicle_view_form_inherit_repair" model="ir.ui.view">
+    <field name='name'>fleet.vehicle.form.inherit.repair</field>
+    <field name ='model'>fleet.vehicle</field>
+    <field name="inherit_id" ref="fleet.fleet_vehicle_view_form"/>
+    <field name="arch" type="xml">
+        <div name="button_box" position="inside">
+            <button name="action_view_repair_orders"
+                    type="object"
+                    class="oe_stat_button"
+                    icon="fa-history">
+                <field name="repair_order_count" widget="statinfo" string="Repairs"/>
+            </button>
+        </div>
+    </field>
+</record>
 
-<menuitem id="menu_automotive_repair_orders" 
-          name="Repair Orders" 
-          parent="menu_automotive_repair_root" 
-          action="action_automotive_repair_order"
-          groups="repair_order_custom.group_automotive_manager"
-          sequence="10"/>
+    <!-- 3. ACTION DEFINITION -->
+    <record id="action_automotive_repair_order" model="ir.actions.act_window">
+        <field name="name">Automotive Repair Orders</field>
+        <field name="res_model">automotive.order</field>
+        <field name="view_mode">tree,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Create your first automotive repair order!
+            </p>
+        </field>
+    </record>
+
+    <!-- 4. MENU ITEMS -->
+    <menuitem id="menu_automotive_repair_root" 
+              name="Automotive Repair" 
+              web_icon="base,static/description/icon.png"
+              groups="repair_order_custom.group_automotive_manager"
+              sequence="10"/>
+
+    <menuitem id="menu_automotive_repair_orders" 
+              name="Repair Orders" 
+              parent="menu_automotive_repair_root" 
+              action="action_automotive_repair_order"
+              groups="repair_order_custom.group_automotive_manager"
+              sequence="10"/>
 </odoo>

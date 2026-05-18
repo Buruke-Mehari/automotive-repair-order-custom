@@ -4,12 +4,13 @@
     'version': '17.0.1.0.0',
     'summary': 'Lightweight and clean vehicle repair order workflow',
     'category': 'Services',
-    'depends': ['base', 'mail', 'sale'],
+    'depends': ['base', 'mail', 'sale','fleet'],
     'data': [
         'security/ir.model.access.csv',
         'security/security_group.xml',
         'views/repair_order_custom_view.xml',
-        'data/ir_sequence_data.xml'
+        'data/ir_sequence_data.xml',
+        'data/mail_template_data.xml'
        
     ],
     'installable': True,
