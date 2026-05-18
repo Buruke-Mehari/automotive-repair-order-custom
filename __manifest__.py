@@ -10,7 +10,8 @@
         'security/security_group.xml',
         'views/repair_order_custom_view.xml',
         'data/ir_sequence_data.xml',
-        'data/mail_template_data.xml'
+        'data/mail_template_data.xml',
+        'report/repair_order_report.xml'
        
     ],
     'installable': True,

@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="action_report_automotive_order" model="ir.actions.report">
+        <field name='name'>Repair Order</field>
+        <field name='model'>automotive.order</field>
+        <field name='report_type'>qweb-pdf</field>
+        <field name='report_name'>repair_order_custom.report_automotive_order_template</field>
+        <field name='report_file'>repair_order_custom.report_automotive_order_template</field>
+        <field name='print_report_name'>'Repair_Order_' + (object.name or 'New')</field>
+        <field name='binding_model_id' ref="model_automotive_order"/>
+        <field name='binding_type'>report</field>
+    </record>
+
+    <template id="report_automotive_order_template">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="o">
+                <t t-call="web.external_layout">
+                    <div class="page" style="font-family: 'Helvetica', 'Arial', sans-serif;">
+                        
+                        <div class="row mb-4">
+                            <div class="col-12 text-center border-bottom pb-2">
+                                <h2 style="font-weight: bold; color: #2C3E50;">AUTOMOTIVE REPAIR ORDER</h2>
+                                <h4>Reference: <span t-field="o.name"/></h4>
+                            </div>
+                        </div>
+
+                        <div class="row mb-4" style="font-size: 14px;">
+                            <div class="col-6">
+                                <strong>Customer Information:</strong><br/>
+                                <span t-field="o.partner_id.name"/><br/>
+                                <span t-field="o.partner_id.street"/><br/>
+                                <span t-field="o.partner_id.phone"/>
+                            </div>
+                            <div class="col-6 text-end">
+                                <strong>Order Details:</strong><br/>
+                                <strong>Date In:</strong> <span t-field="o.date_in" t-options="{'widget': 'datetime'}"/><br/>
+                                <strong>Technician:</strong> <span t-field="o.user_id.name"/><br/>
+                                <strong>Status:</strong> <span t-field="o.state"/>
+                            </div>
+                        </div>
+
+                        <table class="table table-bordered mb-4" style="font-size: 13px;">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Vehicle Designation</th>
+                                    <th class="text-center">License Plate</th>
+                                    <th class="text-center">Current Mileage</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><span t-field="o.vehicle_id.name"/></td>
+                                    <td class="text-center"><span t-field="o.vehicle_license_plate"/></td>
+                                    <td class="text-center"><span t-field="o.vehicle_mileage"/> Km</td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <div class="card mb-4">
+                            <div class="card-header bg-light"><strong>Requested Workshop Operations</strong></div>
+                            <div class="card-body">
+                                <p class="card-text" t-field="o.requested_work"/>
+                            </div>
+                        </div>
+
+                        <t t-if="o.internal_notes">
+                            <div class="card mb-4">
+                                <div class="card-header bg-light"><strong>Workshop Engineering Notes</strong></div>
+                                <div class="card-body">
+                                    <p class="card-text" t-field="o.internal_notes"/>
+                                </div>
+                            </div>
+                        </t>
+
+                        <div class="row mt-5 pt-3" style="font-size: 12px;">
+                            <div class="col-6 text-center">
+                                <strong>Customer Signature</strong>
+                                <div class="mt-2 border rounded p-2" style="height: 100px; background: #FAFAFA;">
+                                    <t t-if="o.customer_signature">
+                                        <img t-assign="o.customer_signature" t-att-src="image_data_uri(o.customer_signature)" style="max-height: 80px; max-width: 100%;"/>
+                                    </t>
+                                </div>
+                                <div class="mt-1">
+                                    Signed By: <span t-field="o.customer_signed_by"/> / On: <span t-field="o.customer_signed_on"/>
+                                </div>
+                            </div>
+                            <div class="col-6 text-center">
+                                <strong>Technician Verification</strong>
+                                <div class="mt-2 border rounded p-2" style="height: 100px; background: #FAFAFA;">
+                                    <t t-if="o.tech_signature">
+                                        <img t-assign="o.tech_signature" t-att-src="image_data_uri(o.tech_signature)" style="max-height: 80px; max-width: 100%;"/>
+                                    </t>
+                                </div>
+                                <div class="mt-1">
+                                    Verified By: <span t-field="o.tech_signed_by"/> / On: <span t-field="o.tech_signed_on"/>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+</odoo>
