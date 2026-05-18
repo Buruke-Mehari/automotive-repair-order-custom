@@ -33,49 +33,52 @@
                     
                     <!-- NEW EMAIL BUTTON: Triggers the python composer method -->
                     <button name="action_send_repair_order_email" type="object" string="Send Repair Order" class="oe_highlight" icon="fa-envelope" invisible="state == 'cancelled'"/>
-                    
+                    <button name="action_create_final_invoice" string="Create Invoice" type="object" class="btn-secondary" invisible="state not in ['ready', 'delivered']"/>
                     <button name="action_cancel" type="object" string="Cancel" invisible="state in ('delivered', 'cancelled')"/>
                     <field name="state" widget="statusbar" statusbar_visible="draft,received,progress,ready,delivered"/>
                 </header>
                 <sheet>
+                    <!-- Alert Dashboard Integration Layer -->
+                   
                     <div class="oe_title">
                         <h1>
                             <field name="name"/>
                         </h1>
                     </div>
                     <group>
-                        <group string="Customer &amp; Vehicle">
-                            <field name="partner_id"/>
-                            <field name="vehicle_license_plate"/>
-                            <field name="vehicle_mileage"/>
+                        <group string="Core Identity">
+                            <field name="partner_id" readonly="state in ['delivered', 'cancelled']"/>
+                            <field name="sale_order_id" readonly="state in ['delivered', 'cancelled']"/>
+                            <field name="user_id" readonly="state in ['delivered', 'cancelled']"/>
                         </group>
-                        <group string="Execution Details">
-                            <field name="date_in"/>
-                            <field name="user_id" widget="many2one_avatar_user"/>
-                            <field name="sale_order_id"/>
+                        <group string="Asset Ingest parameters">
+                            <field name="vehicle_id" readonly="state in ['delivered', 'cancelled']"/>
+                            <field name="vehicle_license_plate" readonly="state in ['delivered', 'cancelled']"/>
+                            <field name="vehicle_mileage" readonly="state in ['delivered', 'cancelled']"/>
+                            <field name="date_in" readonly="1"/>
+                            <field name="date_delivered" readonly="1"/>
                         </group>
                     </group>
                     <notebook>
-                        <page string="Work Specifications" name="work_specifications">
+                        <page string="Statement of Work Operations">
+                            <field name="requested_work" placeholder="Specify operations parameters..." readonly="state in ['delivered', 'cancelled']"/>
+                        </page>
+                        <page string="Signatures Validation">
                             <group>
-                                <field name="requested_work" placeholder="Describe the issues reported by the customer..."/>
+                                <group string="Customer Handoff">
+                                    <field name="customer_signature" widget="signature" readonly="state == 'delivered'"/>
+                                    <field name="customer_signed_by" readonly="state == 'delivered'"/>
+                                    <field name="customer_signed_on" readonly="1"/>
+                                </group>
+                                <group string="Workshop Sign-Off">
+                                    <field name="tech_signature" widget="signature" readonly="state == 'delivered'"/>
+                                    <field name="tech_signed_by" readonly="state == 'delivered'"/>
+                                    <field name="tech_signed_on" readonly="1"/>
+                                </group>
                             </group>
                         </page>
-                        <page string="Signatures" name="signatures">
-                            <group>
-                                <group string="Drop-off Authorization">
-                                    <field name="customer_signature" widget="signature"/>
-                                    <field name="customer_signed_by" invisible="not customer_signature"/>
-                                    <field name="customer_signed_on" invisible="not customer_signature"/>
-                                </group>
-                                <group string="Technician Sign-off">
-                                    <field name="tech_signature" widget="signature"/>
-                                    <field name="tech_signed_on" invisible="not tech_signature"/>
-                                </group>
-                            </group>
-                        </page>
-                        <page string="Internal Notes" name="internal_notes">
-                            <field name="internal_notes" placeholder="Internal technical notes..."/>
+                        <page string="Internal Metadata Logging">
+                            <field name="internal_notes" placeholder="Internal structural commentary..."/>
                         </page>
                     </notebook>
                 </sheet>
@@ -90,37 +93,9 @@
         </field>
     </record>
 
-    <record id="view_partner_form_inherit_repair" model="ir.ui.view">
-    <field name ='name'>res.partner.form.inherit.repair</field>
-    <field name ='model'>res.partner</field>
-    <field name="inherit_id" ref="base.view_partner_form"/>
-    <field name="arch" type="xml">
-        <div name="button_box" position="inside">
-            <button name="action_view_repair_orders"
-                    type="object"
-                    class="oe_stat_button"
-                    icon="fa-wrench">
-                <field name="repair_order_count" widget="statinfo" string="Repair Orders"/>
-            </button>
-        </div>
-    </field>
-</record>
+   
 
-<record id="fleet_vehicle_view_form_inherit_repair" model="ir.ui.view">
-    <field name='name'>fleet.vehicle.form.inherit.repair</field>
-    <field name ='model'>fleet.vehicle</field>
-    <field name="inherit_id" ref="fleet.fleet_vehicle_view_form"/>
-    <field name="arch" type="xml">
-        <div name="button_box" position="inside">
-            <button name="action_view_repair_orders"
-                    type="object"
-                    class="oe_stat_button"
-                    icon="fa-history">
-                <field name="repair_order_count" widget="statinfo" string="Repairs"/>
-            </button>
-        </div>
-    </field>
-</record>
+
 
     <!-- 3. ACTION DEFINITION -->
     <record id="action_automotive_repair_order" model="ir.actions.act_window">

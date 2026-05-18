@@ -11,7 +11,9 @@
         'views/repair_order_custom_view.xml',
         'data/ir_sequence_data.xml',
         'data/mail_template_data.xml',
-        'report/repair_order_report.xml'
+        'report/repair_order_report.xml',
+        'views/auto_customer_view.xml',
+        'views/auto_fleet_view.xml'
        
     ],
     'installable': True,
