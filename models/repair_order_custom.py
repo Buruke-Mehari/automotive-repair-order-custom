@@ -17,7 +17,7 @@ class AutomotiveOrder(models.Model):
     partner_id = fields.Many2one('res.partner', string='Customer', required=True, tracking=True)
     sale_order_id = fields.Many2one('sale.order', string='Sale Order/Quotation', tracking=True)
     vehicle_id = fields.Many2one('fleet.vehicle', string='Vehicle', required=True, tracking=True)
-    
+    lead_id = fields.Many2one('crm.lead',string='Originating Lead/Opportunity',help="The marketing or sales lead where this business originated.")
     create_uid = fields.Many2one('res.users', string='Created By', readonly=True)
     create_date = fields.Datetime(string='Creation Date', readonly=True)
     
@@ -36,7 +36,8 @@ class AutomotiveOrder(models.Model):
         ('progress', 'In Progress'),
         ('ready', 'Ready'),
         ('delivered', 'Delivered'),
-        ('cancelled', 'Cancelled')
+        ('cancelled', 'Cancelled'),
+        ('invoice_paid', 'Invoice Paid')
     ], string='Status', default='draft', tracking=True, required=True)
 
     # Signatures
@@ -74,62 +75,98 @@ class AutomotiveOrder(models.Model):
     # AUTOMATION WORKFLOW ACTIONS & STATUS UPDATES
     # =========================================================================
     def action_receive_vehicle(self):
-     self.ensure_one()
+        """ GATES: Validates Signed Quotation & Ingest Fields. 
+                  Warns for Customer Debt & Duplicate Open Files. """
+        self.ensure_one()
 
-    # 1. Hard block for missing critical info (Keep this blocking)
-     if not self.vehicle_license_plate or self.vehicle_mileage <= 0:
-        raise UserError(_("Data Missing: Please record a valid license plate and current mileage."))
-    
-    # 2. Duplicate Check - WARNING ONLY (Logs to Chatter, does NOT block)
+        # 1. HARD GATE: Ensure a Sale Order/Quotation relation is picked
+        if not self.sale_order_id:
+            raise UserError(_("Validation Error: No Quotation is linked to this Repair Order. Please link a quotation before workshop intake."))
+        
+        # 2. HARD GATE: Ensure that Sale Order is SIGNED / APPROVED (State must be 'sale' or 'done')
+        if self.sale_order_id.state not in ['sale', 'done']:
+            raise UserError(_("Workflow Block: The linked quotation (%s) is not approved. It must be confirmed/signed before you can receive the vehicle.") % self.sale_order_id.name)
+
+        # 3. HARD GATE: Asset Ingest Fields Check
+        if not self.vehicle_license_plate or self.vehicle_mileage <= 0:
+            raise UserError(_("Data Missing: Please record a valid license plate and current mileage before checking the vehicle into the shop floor."))
+        
+        # 4. WARNING ONLY: Parallel Duplicate Work Order Scan (Non-blocking)
         duplicate_runs = self.env['automotive.order'].search_count([
             ('vehicle_id', '=', self.vehicle_id.id),
             ('state', 'in', ['received', 'progress', 'ready']),
             ('id', '!=', self.id)
-            ])
+        ])
         if duplicate_runs > 0:
-         self.message_post(body=Markup(
-            "<span style='color: #ee9b00;'>⚠️ <b>Intake Warning:</b> This vehicle is already active in another job sheet. Proceeding anyway.</span>"
-        ))
+            self.message_post(body=Markup(
+                "<span style='color: #ee9b00;'>⚠️ <b>Intake Warning:</b> This vehicle asset is currently active in another running workshop file. Processing intake anyway.</span>"
+            ))
 
-    # 3. Unpaid Balance Check - WARNING ONLY (Logs to Chatter, does NOT block)
+        # 5. WARNING ONLY: Customer Outstanding Accounting Balance Scan (Non-blocking)
         unpaid_invoices_count = self.env['account.move'].search_count([
             ('partner_id', '=', self.partner_id.id),
             ('payment_state', 'not in', ['paid', 'in_payment']),
             ('move_type', '=', 'out_invoice'),
             ('state', '=', 'posted')
-            ])
+        ])
         if unpaid_invoices_count > 0:
-         self.message_post(body=Markup(
-            "<span style='color: #d90429;'>⚠️ <b>Financial Warning:</b> Customer has outstanding unpaid invoices! Proceeding with intake anyway.</span>"
-        ))
+            self.message_post(body=Markup(
+                "<span style='color: #d90429;'>⚠️ <b>Financial Warning:</b> This customer has outstanding, unpaid invoices on file! Processing intake anyway.</span>"
+            ))
 
-    # 4. Move forward with state change seamlessly
+        # SUCCESS: Update sequence to 'Vehicle Received'
+        self.message_post(body=Markup("<span style='color:green;'>⚙️ <b>Intake Passed:</b> Vehicle successfully received. Upstream quotation approval verified.</span>"))
         self.write({'state': 'received'})
-              
+
     def action_start_repair(self):
-        if not self.user_id:
-            raise UserError(_("Operation Blocked: An assigned technician is required to start work in progress operations."))
-        self.write({'state': 'progress'})
-
-    def action_set_ready(self):
-        if not self.tech_signature:
-            raise UserError(_("QA Failure: Technician must sign off work execution parameters before marking the asset as Ready."))
-        self.write({'state': 'ready'})
-
-    def action_deliver(self):
-        if self.state != 'ready':
-            raise UserError(_("Workflow Exception: Direct transition to Delivered from a state other than 'Ready' is not allowed."))
+        """ Advances to Work In Progress. Enforces technician assignment. """
+        self.ensure_one()
+        if not self.assigned_technician_id:
+            raise UserError(_("Operational Gate: Please assign a Technician before marking this file as Work In Progress (WIP)."))
         
-        # Capture precise handoff tracking metrics automatically
-        self.write({
-            'state': 'delivered',
-            'date_delivered': fields.Datetime.now()
-        })
-        self.message_post(body=_("🔑 Vehicle physically delivered to client. Delivery record timestamp logged successfully."))
+        self.write({'state': 'progress'})
+        self.message_post(body="🔧 <b>Workshop Notice:</b> Repair activities have actively commenced on the shop floor.")
+
+    def action_make_ready(self):
+        """ Advances to Ready for Pickup once technician finishes wrenching. """
+        self.ensure_one()
+        self.write({'state': 'ready'})
+        self.message_post(body="✅ <b>Workshop Notice:</b> Work completed. Vehicle is ready for customer collection.")
+
+    def action_deliver_vehicle(self):
+        """ Advances to Delivered upon handover. """
+        self.ensure_one()
+        self.write({'state': 'delivered'})
+        self.message_post(body="🚗 <b>Hand-off Complete:</b> Vehicle keys safely handed over and delivered to customer.")
 
     def action_cancel(self):
-        self.write({'state': 'cancelled'})   
+        """ Allows cancellation from early stages """
+        self.ensure_one()
+        if self.state in ['progress', 'ready', 'delivered']:
+            raise UserError(_("Security Block: Cannot cancel a repair order that has already been executed or delivered."))
+        self.write({'state': 'cancelled'})
 
+    # -------------------------------------------------------------------------
+    # ODOO OVRRIDES (Sequential Tracking)
+    # -------------------------------------------------------------------------
+    @api.model_create_multi
+    def create(self, vals_list):
+        """ Automatically attaches custom sequence tracking numbers upon creation """
+        for vals in vals_list:
+            if vals.get('name', _('New')) == _('New'):
+                vals['name'] = self.env['ir.sequence'].next_by_code('automotive.order') or _('New')
+        return super(AutomotiveOrder, self).create(vals_list)  
+    
+    def action_check_invoice_payment(self):
+        """ Can be called via an automated action or a button to check payment status """
+        self.ensure_one()
+        
+        if self.sale_order_id and self.sale_order_id.invoice_ids:
+        # Check if all invoices linked to the sale order are fully paid
+          invoices = self.sale_order_id.invoice_ids.filtered(lambda r: r.move_type == 'out_invoice' and r.state == 'posted')
+        if invoices and all(inv.payment_state in ['paid', 'in_payment'] for inv in invoices):
+            self.write({'state': 'invoice_paid'})
+            self.message_post(body="💰 <b>Payment Confirmed:</b> Linked invoice has been fully paid. Workshop file closed successfully.")
     # =========================================================================
     # AUTOMATED INVOICE SCRIPT GENERATOR
     # =========================================================================

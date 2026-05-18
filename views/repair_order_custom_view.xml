@@ -28,8 +28,8 @@
                 <header>
                     <button name="action_receive_vehicle" type="object" string="Receive Vehicle" class="oe_highlight" invisible="state != 'draft'"/>
                     <button name="action_start_repair" type="object" string="Start Repair" class="oe_highlight" invisible="state != 'received'"/>
-                    <button name="action_set_ready" type="object" string="Mark Ready" class="oe_highlight" invisible="state != 'progress'"/>
-                    <button name="action_deliver" type="object" string="Deliver" class="oe_highlight" invisible="state != 'ready'"/>
+                    <button name="action_make_ready" type="object" string="Mark Ready" class="oe_highlight" invisible="state != 'progress'"/>
+                    <button name="action_deliver_vehicle" type="object" string="Deliver" class="oe_highlight" invisible="state != 'ready'"/>
                     
                     <!-- NEW EMAIL BUTTON: Triggers the python composer method -->
                     <button name="action_send_repair_order_email" type="object" string="Send Repair Order" class="oe_highlight" icon="fa-envelope" invisible="state == 'cancelled'"/>
