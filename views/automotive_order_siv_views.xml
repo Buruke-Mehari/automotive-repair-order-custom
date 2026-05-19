@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+<record id="view_repair_order_form_inherit_siv" model="ir.ui.view">
+    <field name="name">automotive.order.form.inherit.siv</field>
+    <field name="model">automotive.order</field>
+    <field name="inherit_id" ref="repair_order_custom.view_repair_order_form"/> <!-- Swap out with your actual core module view record XML id -->
+    <field name="arch" type="xml">
+        <!-- Add the Cloud Fetch action control button right after the license plate field string input layout box -->
+        <xpath expr="//field[@name='vehicle_license_plate']" position="after">
+            <button name="action_fetch_siv_plate_data"
+                    type="object"
+                    string="Fetch SIV Data"
+                    class="btn-link o_row_id"
+                    icon="fa-cloud-download"
+                    invisible="state not in ['draft']"
+                    help="Queries the French Ministry registration database proxy and creates or matches the Odoo Fleet vehicle profile asset automatically."/>
+        </xpath>
+
+        <!-- Display the fetched SIV technical characteristics in a clean, read-only configuration block under the vehicle picker link layout -->
+        <xpath expr="//field[@name='vehicle_id']" position="after">
+    <field name="vehicle_model_id" readonly="1" force_save="1"/>
+    <field name="vehicle_vin" readonly="1" force_save="1"/>
+    <field name="vehicle_fuel_type" readonly="1" force_save="1"/>
+</xpath>
+    </field>
+</record>
+</odoo>

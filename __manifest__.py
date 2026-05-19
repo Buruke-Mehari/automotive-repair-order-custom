@@ -13,7 +13,8 @@
         'data/mail_template_data.xml',
         'report/repair_order_report.xml',
         'views/auto_customer_view.xml',
-        'views/auto_fleet_view.xml'
+        'views/auto_fleet_view.xml',
+        'views/automotive_order_siv_views.xml'
        
     ],
     'installable': True,
